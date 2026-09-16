@@ -80,15 +80,13 @@ export function BooksCard({ books }: BookProps) {
       <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow className="flex items-center justify-between">
-              <TableHeadBooks />
-            </TableRow>
+            <TableHeadBooks />
           </TableHeader>
           <TableBody>
             {books.map((book) => (
               <TableRow
                 key={book._id}
-                className={`flex items-center justify-between cursor-pointer ${
+                className={`cursor-pointer ${
                   selectedRows.has(book._id)
                     ? "bg-blue-100"
                     : book.available
@@ -96,29 +94,28 @@ export function BooksCard({ books }: BookProps) {
                       : "bg-yellow-100"
                 }`}
               >
-                <TableCell className="w-12 shrink-0 flex justify-center">
+                <TableCell className="w-12">
                   <Checkbox
                     checked={selectedRows.has(book._id)}
                     onCheckedChange={() => toggleRow(book._id)}
                   />
                 </TableCell>
-
-                <TableCell className="min-w-40 shrink-0">
+                <TableCell className="w-48 truncate max-w-48" title={book.title}>
                   {book.title}
                 </TableCell>
-                <TableCell className="min-w-56 shrink-0">
+                <TableCell className="w-52 truncate max-w-52" title={book.author}>
                   {book.author}
                 </TableCell>
-                <TableCell className="min-w-40 shrink-0">
+                <TableCell className="w-36 truncate max-w-36" title={book.isbn || "-"}>
                   {book.isbn || "-"}
                 </TableCell>
-                <TableCell className="min-w-40 shrink-0">
+                <TableCell className="w-24">
                   {book.year || "-"}
                 </TableCell>
-                <TableCell className="min-w-40 shrink-0">
+                <TableCell className="w-28">
                   {avaliable(book.available)}
                 </TableCell>
-                <TableCell className="min-w-16 shrink-0 flex justify-center">
+                <TableCell className="w-16 text-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <Button variant="ghost" size="icon">

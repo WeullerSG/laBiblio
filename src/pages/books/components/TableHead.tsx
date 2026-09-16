@@ -2,14 +2,14 @@ import { TableHead, TableRow } from "@/components/ui/table";
 
 export function TableHeadBooks() {
   return (
-    <TableRow className="flex justify-between">
-      <TableHead className="min-w-40 shrink-0 flex items-center"></TableHead>
-      <TableHead className="min-w-40 shrink-0 flex items-center">Titulo</TableHead>
-      <TableHead className="min-w-56 shrink-0 flex items-center">Autor</TableHead>
-      <TableHead className="min-w-40 shrink-0 flex items-center">Isbn</TableHead>
-      <TableHead className="min-w-40 shrink-0 flex items-center">Ano</TableHead>
-      <TableHead className="min-w-40 shrink-0 flex items-center">Disponível</TableHead>
-      <TableHead className="min-w-16 shrink-0 flex items-center">Ações</TableHead>
+    <TableRow>
+      <TableHead className="w-12"></TableHead>
+      <TableHead className="w-48">Titulo</TableHead>
+      <TableHead className="w-52">Autor</TableHead>
+      <TableHead className="w-36">Isbn</TableHead>
+      <TableHead className="w-24">Ano</TableHead>
+      <TableHead className="w-28">Disponível</TableHead>
+      <TableHead className="w-16 text-center">Ações</TableHead>
     </TableRow>
   );
 }
