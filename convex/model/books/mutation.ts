@@ -40,6 +40,16 @@ export const updateBook = mutation({
   },
 });
 
+export const returnBook = mutation({
+  args: { id: v.id("books") },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Livro não localizado");
+
+    await ctx.db.patch(args.id, { available: true });
+  },
+});
+
 export const delet = mutation({
   args: { id: v.id("books") },
   handler: async (ctx, args) => {
