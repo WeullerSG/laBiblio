@@ -1,29 +1,23 @@
-import type { ComponentType } from "react";
 import { Home, LibraryBig, Users, Briefcase } from "lucide-react";
-import { Dashboard } from "./pages/home/DashboardPage";
+import type { AppRoute } from "./components/shared/AppLayout";
+import { HomePage } from "./pages/home/HomePage";
 import { BookPages } from "./pages/books/page/BookPages";
 import { AlunosPage } from "./pages/alunos/page/AlunosPage";
 import { ColaboradoresPage } from "./pages/colaboradores/page/ColaboradoresPage";
 
-export type RouteConfig = {
-  path: string;
-  title: string;
-  icon: ComponentType;
-  component: ComponentType;
-  showInMenu: boolean;
-};
+export type RouteConfig = AppRoute;
 
 export const routes: RouteConfig[] = [
   {
     path: "/dashboard",
     title: "Dashboard",
     icon: Home,
-    component: Dashboard,
+    component: HomePage,
     showInMenu: true,
   },
   {
     path: "/bookPage",
-    title: "Books",
+    title: "Livros",
     icon: LibraryBig,
     component: BookPages,
     showInMenu: true,

@@ -107,12 +107,14 @@ export function AddBooks({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
-        <DialogTrigger>
-          <Button className="w-full sm:w-auto gap-2">
-            <Plus className="h-4 w-4" />
-            Adicionar Livro
-          </Button>
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            <Button className="w-full gap-2 shadow-sm sm:w-auto">
+              <Plus className="size-4" />
+              Adicionar Livro
+            </Button>
+          }
+        />
       )}
       <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh] overflow-hidden">
         <DialogHeader className="shrink-0">
@@ -169,17 +171,23 @@ export function AddBooks({
             </div>
           </div>
 
-          <Label htmlFor="available" className="cursor-pointer">
+          <label
+            htmlFor="available"
+            className="flex cursor-pointer items-center justify-between rounded-lg border p-3 text-sm transition-colors hover:bg-muted/50"
+          >
+            <span>
+              <span className="block font-medium">Disponível para empréstimo</span>
+              <span className="text-xs text-muted-foreground">Desmarque se o livro estiver emprestado ou indisponível</span>
+            </span>
             <input
               id="available"
               name="available"
               type="checkbox"
               checked={form.available}
               onChange={handleChange}
-              className="h-4 w-4"
+              className="size-4 accent-primary"
             />
-            Disponível
-          </Label>
+          </label>
 
           <div className="flex justify-end pt-1">
             <Button type="submit" disabled={loading}>

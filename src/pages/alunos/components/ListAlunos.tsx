@@ -1,162 +1,103 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { api } from "@convex/_generated/api";
-import { useMutation } from "convex/react";
-import { EllipsisVertical, Eye, SquarePen, Trash } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import type { Doc, Id } from "@convex/_generated/dataModel";
+import { useMutation } from "convex/react";
+import { GraduationCap } from "lucide-react";
+import { api } from "@convex/_generated/api";
+import type { Doc } from "@convex/_generated/dataModel";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { EmptyTableRow } from "@/components/shared/EmptyState";
+import { RowActions } from "@/components/shared/RowActions";
+import { PersonCell } from "@/components/shared/PersonCell";
+import { ConfirmDeleteDialog, DetailsDialog } from "@/components/shared/DetailsDialog";
+import { TableSkeletonRows } from "@/pages/books/components/ListBooks";
 import { TableHeadAlunos } from "./TableHeadAlunos";
 import { AddAluno } from "./AddAluno";
 
-interface AlunoRowProps {
-  aluno: Doc<"alunos">;
-  onDelete: (id: Id<"alunos">) => void;
-}
-
-function AlunoRow({
-  aluno,
-  onDelete,
-}: AlunoRowProps) {
-  const [open, setOpen] = useState(false);
-  const [alertOpen, setAlertOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+function AlunoRow({ aluno }: { aluno: Doc<"alunos"> }) {
+  const remove = useMutation(api.model.alunos.mutation.deleteAluno);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <>
-      <TableRow key={aluno._id} className="flex items-center justify-between">
-        <TableCell className="min-w-40 shrink-0">{aluno.nome}</TableCell>
-        <TableCell className="min-w-56 shrink-0">{aluno.email}</TableCell>
-        <TableCell className="min-w-40 shrink-0">{aluno.matricula || "-"}</TableCell>
-        <TableCell className="min-w-40 shrink-0">{aluno.data_nascimento || "-"}</TableCell>
-        <TableCell className="min-w-40 shrink-0">{aluno.endereco || "-"}</TableCell>
-        <TableCell className="min-w-16 shrink-0 flex justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="ghost" size="icon">
-                <EllipsisVertical />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTimeout(() => setOpen(true), 0)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Visualizar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeout(() => setIsEditOpen(true), 0)}>
-                <SquarePen className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-500 focus:text-red-500"
-                onClick={() => setTimeout(() => setAlertOpen(true), 0)}
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <TableRow>
+        <TableCell className="max-w-64">
+          <PersonCell name={aluno.nome} subtitle={aluno.email} />
+        </TableCell>
+        <TableCell className="hidden font-mono text-xs text-muted-foreground sm:table-cell">
+          {aluno.matricula || "-"}
+        </TableCell>
+        <TableCell className="hidden text-muted-foreground md:table-cell">
+          {aluno.data_nascimento || "-"}
+        </TableCell>
+        <TableCell
+          className="hidden max-w-56 truncate text-muted-foreground lg:table-cell"
+          title={aluno.endereco}
+        >
+          {aluno.endereco || "-"}
+        </TableCell>
+        <TableCell className="text-right">
+          <RowActions
+            onView={() => setViewOpen(true)}
+            onEdit={() => setEditOpen(true)}
+            onDelete={() => setDeleteOpen(true)}
+          />
         </TableCell>
       </TableRow>
-      <AddAluno
-        aluno={aluno}
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
+
+      <AddAluno aluno={aluno} open={editOpen} onOpenChange={setEditOpen} />
+      <DetailsDialog
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        title={aluno.nome}
+        subtitle={aluno.email}
+        fields={[
+          { label: "Matrícula", value: aluno.matricula },
+          { label: "Data de nascimento", value: aluno.data_nascimento },
+          { label: "Endereço", value: aluno.endereco },
+        ]}
       />
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{aluno.nome}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-2 text-sm">
-            <p>
-              <span className="text-muted-foreground">E-mail: </span>
-              {aluno.email}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Matrícula: </span>
-              {aluno.matricula || "-"}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Data de Nascimento: </span>
-              {aluno.data_nascimento || "-"}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Endereço: </span>
-              {aluno.endereco || "-"}
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Excluir aluno</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja excluir "{aluno.nome}"? Essa ação não
-            pode ser desfeita.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAlertOpen(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onDelete(aluno._id);
-                setAlertOpen(false);
-              }}
-            >
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        entity="aluno"
+        name={aluno.nome}
+        onConfirm={() => void remove({ id: aluno._id })}
+      />
     </>
   );
 }
 
-export function ListAlunos({ listAlunos }: { listAlunos: Doc<"alunos">[] }) {
-  const delet = useMutation(api.model.alunos.mutation.deleteAluno);
-
-  const onDelete = (id: Id<"alunos">) => {
-    delet({ id });
-  };
-
+export function ListAlunos({
+  listAlunos,
+  loading,
+}: {
+  listAlunos: Doc<"alunos">[];
+  loading?: boolean;
+}) {
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableHeadAlunos />
-        </TableHeader>
-        <TableBody>
-          {listAlunos?.map((aluno) => (
-            <AlunoRow
-              key={aluno._id}
-              aluno={aluno}
-              onDelete={onDelete}
-            />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableHeadAlunos />
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableSkeletonRows cols={5} />
+            ) : listAlunos.length === 0 ? (
+              <EmptyTableRow
+                colSpan={5}
+                icon={GraduationCap}
+                title="Nenhum aluno encontrado"
+                description="Cadastre um novo aluno ou ajuste a busca."
+              />
+            ) : (
+              listAlunos.map((aluno) => <AlunoRow key={aluno._id} aluno={aluno} />)
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

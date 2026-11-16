@@ -13,6 +13,7 @@ import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import { Notifications } from "@/services/notifications";
 import { ResetSenha } from "@/alunosPages/resetSenha";
+import { BookMarked, BookOpen, Clock, ShieldCheck } from "lucide-react";
 
 export function SignIn() {
   const { signIn } = useAuthActions();
@@ -22,12 +23,44 @@ export function SignIn() {
   const [tela, setTela] = useState<"login" | "reset">("login");
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <aside className="relative hidden overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+        <div className="absolute -right-24 -top-24 size-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-32 -left-16 size-96 rounded-full bg-black/10 blur-3xl" />
+        <div className="relative flex items-center gap-2.5">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
+            <BookOpen className="size-5" />
+          </div>
+          <span className="text-xl font-bold tracking-tight">LaBiblio</span>
+        </div>
+        <div className="relative max-w-md">
+          <h2 className="text-4xl font-bold leading-tight tracking-tight">
+            Sua biblioteca, organizada e a um clique.
+          </h2>
+          <p className="mt-4 text-primary-foreground/80">
+            Consulte o acervo, alugue até 3 livros por vez e receba lembretes de devolução por e-mail.
+          </p>
+          <ul className="mt-8 flex flex-col gap-3 text-sm text-primary-foreground/90">
+            <li className="flex items-center gap-2"><BookMarked className="size-4" /> Catálogo sempre atualizado</li>
+            <li className="flex items-center gap-2"><Clock className="size-4" /> Prazos e lembretes automáticos</li>
+            <li className="flex items-center gap-2"><ShieldCheck className="size-4" /> Acesso seguro com Google ou senha</li>
+          </ul>
+        </div>
+        <p className="relative text-xs text-primary-foreground/60">© {new Date().getFullYear()} LaBiblio</p>
+      </aside>
+
+      <div className="flex items-center justify-center bg-background p-4 sm:p-8">
+      <Card className="w-full max-w-sm border-0 bg-transparent shadow-none ring-0 sm:border sm:bg-card sm:shadow-lg sm:ring-1">
+        <div className="flex items-center justify-center gap-2 pt-2 lg:hidden">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <BookOpen className="size-4" />
+          </div>
+          <span className="text-lg font-bold tracking-tight">LaBiblio</span>
+        </div>
         {tela === "reset" ? (
           <>
             <CardHeader>
-              <CardTitle className="text-xl">Redefinir senha</CardTitle>
+              <CardTitle className="text-2xl font-bold tracking-tight">Redefinir senha</CardTitle>
               <CardDescription>
                 Enviaremos um código para o seu email
               </CardDescription>
@@ -46,7 +79,7 @@ export function SignIn() {
         ) : (
           <>
             <CardHeader>
-              <CardTitle className="text-xl">
+              <CardTitle className="text-2xl font-bold tracking-tight">
                 {step === "signIn" ? "Entrar" : "Criar conta"}
               </CardTitle>
               <CardDescription>
@@ -89,8 +122,7 @@ export function SignIn() {
                       }
                     })
                     .catch((err) => {
-                      console.log("erro aqui", err);
-                      const message = String(err?.message ?? "");
+                            const message = String(err?.message ?? "");
                       if (message.includes("InvalidAccountId")) {
                         setError("Email não cadastrado.");
                       } else if (message.includes("InvalidSecret")) {
@@ -169,6 +201,7 @@ export function SignIn() {
           </>
         )}
       </Card>
+      </div>
     </div>
   );
 }

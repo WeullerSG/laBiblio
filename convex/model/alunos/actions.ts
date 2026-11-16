@@ -48,7 +48,7 @@ export const registerEmail = internalAction({
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="border-radius:6px; background-color:#2563eb;">
-                      <a href="http://localhost:5173/" style="display:inline-block; padding:12px 24px; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none;">
+                      <a href="https://la-biblio.vercel.app/" style="display:inline-block; padding:12px 24px; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none;">
                         Acessar plataforma
                       </a>
                     </td>

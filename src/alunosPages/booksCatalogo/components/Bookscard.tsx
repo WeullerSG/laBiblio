@@ -1,147 +1,186 @@
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TableHeadBooks } from "@/pages/books/components/TableHead";
-import type { Doc, Id } from "@convex/_generated/dataModel";
-import { EllipsisVertical, Eye } from "lucide-react";
-import { BooksDetails } from "./BookDetails";
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery } from "convex/react";
+import { BookOpen, Eye, ShoppingBag, X } from "lucide-react";
 import { api } from "@convex/_generated/api";
+import type { Doc, Id } from "@convex/_generated/dataModel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { TableHeadBooks } from "@/pages/books/components/TableHead";
+import { BookStatus, TableSkeletonRows } from "@/pages/books/components/ListBooks";
+import { EmptyTableRow } from "@/components/shared/EmptyState";
+import { Notifications } from "@/services/notifications";
+import { cn } from "@/lib/utils";
+import { BooksDetails } from "./BookDetails";
+
+const MAX_BOOKS = 3;
+
+type Toast = { title: string; description: string; variant: "default" | "destructive" };
 
 interface BookProps {
   books: Doc<"books">[];
+  loading?: boolean;
 }
 
-export function BooksCard({ books }: BookProps) {
+export function BooksCard({ books, loading }: BookProps) {
   const rentBooks = useMutation(api.alugueis.RentBooks);
   const aluno = useQuery(api.alunos.currentAluno);
 
   const [selectedBook, setSelectedBook] = useState<Doc<"books"> | null>(null);
   const [open, setOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<Id<"books">>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<Toast | null>(null);
 
-  const avaliable = (aval: boolean) => {
-    return aval ? "Sim" : "Não";
-  };
-
-  const toggleRow = (bookId: string) => {
-    setSelectedRows((prev) => {
-      const newSet = new Set(prev);
-
-      if (newSet.has(bookId)) {
-        newSet.delete(bookId);
+  const toggleRow = (book: Doc<"books">) => {
+    if (!book.available) return;
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(book._id)) {
+        next.delete(book._id);
+      } else if (next.size >= MAX_BOOKS) {
+        setToast({
+          title: "Limite atingido",
+          description: `Você pode selecionar até ${MAX_BOOKS} livros por vez.`,
+          variant: "destructive",
+        });
+        return prev;
       } else {
-        if (newSet.size >= 3) {
-          alert("Você só pode selecionar até 3 livros por vez.");
-          return prev;
-        }
-        newSet.add(bookId);
+        next.add(book._id);
       }
-      return newSet;
+      return next;
     });
   };
 
   async function handleRentBooks() {
-    if (selectedRows.size === 0) {
-      alert("Selecione pelo menos um livro para alugar.");
-      return;
-    }
+    if (!aluno || selected.size === 0) return;
+    setSubmitting(true);
     try {
-      await rentBooks({
-        id_book: Array.from(selectedRows) as Array<Id<"books">>,
-        id_aluno: aluno?._id as any,
+      await rentBooks({ id_book: Array.from(selected), id_aluno: aluno._id });
+      setToast({
+        title: "Empréstimo confirmado!",
+        description: "Você tem 7 dias para devolver. Enviamos os detalhes por e-mail.",
+        variant: "default",
       });
-      alert("Livros alugados com sucesso!");
-      setSelectedRows(new Set());
+      setSelected(new Set());
     } catch (error) {
       console.error("Erro ao alugar livros:", error);
-      alert("Ocorreu um erro ao alugar os livros. Tente novamente.");
+      setToast({
+        title: "Erro",
+        description: "Não foi possível concluir o empréstimo. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
     <>
-      <div>
-        <Button onClick={handleRentBooks}>Alugar Livros</Button>
-      </div>
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow className="flex items-center justify-between">
-              <TableHeadBooks />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {books.map((book) => (
-              <TableRow
-                key={book._id}
-                className={`flex items-center justify-between cursor-pointer ${
-                  selectedRows.has(book._id)
-                    ? "bg-blue-100"
-                    : book.available
-                      ? "bg-green-100"
-                      : "bg-yellow-100"
-                }`}
-              >
-                <TableCell className="w-12 shrink-0 flex justify-center">
-                  <Checkbox
-                    checked={selectedRows.has(book._id)}
-                    onCheckedChange={() => toggleRow(book._id)}
-                  />
-                </TableCell>
+      {toast && <Notifications {...toast} onClose={() => setToast(null)} />}
 
-                <TableCell className="min-w-40 shrink-0">
-                  {book.title}
-                </TableCell>
-                <TableCell className="min-w-56 shrink-0">
-                  {book.author}
-                </TableCell>
-                <TableCell className="min-w-40 shrink-0">
-                  {book.isbn || "-"}
-                </TableCell>
-                <TableCell className="min-w-40 shrink-0">
-                  {book.year || "-"}
-                </TableCell>
-                <TableCell className="min-w-40 shrink-0">
-                  {avaliable(book.available)}
-                </TableCell>
-                <TableCell className="min-w-16 shrink-0 flex justify-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon">
-                        <EllipsisVertical />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedBook(book);
-                          setOpen(true);
-                        }}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Visualizar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableHeadBooks selectable />
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableSkeletonRows cols={7} />
+              ) : books.length === 0 ? (
+                <EmptyTableRow
+                  colSpan={7}
+                  icon={BookOpen}
+                  title="Nenhum livro encontrado"
+                  description="Tente buscar por outro título ou autor."
+                />
+              ) : (
+                books.map((book) => {
+                  const isSelected = selected.has(book._id);
+                  return (
+                    <TableRow
+                      key={book._id}
+                      onClick={() => toggleRow(book)}
+                      data-state={isSelected ? "selected" : undefined}
+                      className={cn(
+                        book.available ? "cursor-pointer" : "opacity-60",
+                        isSelected && "bg-primary/5 hover:bg-primary/10",
+                      )}
+                    >
+                      <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={!book.available}
+                          onCheckedChange={() => toggleRow(book)}
+                          aria-label={`Selecionar ${book.title}`}
+                        />
+                      </TableCell>
+                      <TableCell className="max-w-56 truncate font-medium" title={book.title}>
+                        {book.title}
+                      </TableCell>
+                      <TableCell className="max-w-48 truncate text-muted-foreground" title={book.author}>
+                        {book.author}
+                      </TableCell>
+                      <TableCell className="hidden font-mono text-xs text-muted-foreground md:table-cell">
+                        {book.isbn || "-"}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground sm:table-cell">
+                        {book.year || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <BookStatus available={book.available} />
+                      </TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          aria-label="Ver detalhes"
+                          onClick={() => {
+                            setSelectedBook(book);
+                            setOpen(true);
+                          }}
+                        >
+                          <Eye className="size-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Barra flutuante de seleção */}
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-4 z-40 mx-auto w-[calc(100%-2rem)] max-w-xl transition-all duration-300",
+          selected.size > 0
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-6 opacity-0",
+        )}
+      >
+        <div className="flex items-center gap-3 rounded-2xl border bg-card/95 p-3 pl-4 shadow-xl backdrop-blur">
+          <div className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+            {selected.size}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">
+              {selected.size} de {MAX_BOOKS} livros selecionados
+            </p>
+            <p className="text-xs text-muted-foreground">Devolução em 7 dias</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setSelected(new Set())} aria-label="Limpar seleção">
+            <X className="size-4" />
+          </Button>
+          <Button onClick={handleRentBooks} disabled={submitting || !aluno} className="gap-2">
+            <ShoppingBag className="size-4" />
+            {submitting ? "Confirmando..." : "Alugar"}
+          </Button>
+        </div>
       </div>
 
       {selectedBook && (

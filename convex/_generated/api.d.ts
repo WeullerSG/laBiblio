@@ -16,6 +16,7 @@ import type * as colaboradores from "../colaboradores.js";
 import type * as http from "../http.js";
 import type * as model_alugueis_action from "../model/alugueis/action.js";
 import type * as model_alugueis_mutation from "../model/alugueis/mutation.js";
+import type * as model_alugueis_query from "../model/alugueis/query.js";
 import type * as model_alunos_actions from "../model/alunos/actions.js";
 import type * as model_alunos_mutation from "../model/alunos/mutation.js";
 import type * as model_alunos_passwordReset from "../model/alunos/passwordReset.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "model/alugueis/action": typeof model_alugueis_action;
   "model/alugueis/mutation": typeof model_alugueis_mutation;
+  "model/alugueis/query": typeof model_alugueis_query;
   "model/alunos/actions": typeof model_alunos_actions;
   "model/alunos/mutation": typeof model_alunos_mutation;
   "model/alunos/passwordReset": typeof model_alunos_passwordReset;

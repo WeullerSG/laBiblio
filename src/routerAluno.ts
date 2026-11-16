@@ -1,20 +1,14 @@
 import { BookMarked, LibraryBig } from "lucide-react";
-import type { ComponentType } from "react";
+import type { AppRoute } from "./components/shared/AppLayout";
 import { BookCatalogoPage } from "./alunosPages/booksCatalogo/page/BookCatalogoPage";
 import { AluguelPages } from "./alunosPages/aluguelHistory/pages/AluguelPages";
 
-export type RouteAlunoConfig = {
-  path: string;
-  title: string;
-  icon: ComponentType;
-  component: ComponentType;
-  showInMenu: boolean;
-};
+export type RouteAlunoConfig = AppRoute;
 
 export const alunoRoutes: RouteAlunoConfig[] = [
   {
     path: "/aluno/livros",
-    title: "Livros",
+    title: "Catálogo de livros",
     icon: BookMarked,
     component: BookCatalogoPage,
     showInMenu: true,
