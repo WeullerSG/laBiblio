@@ -1,53 +1,70 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { api } from "@convex/_generated/api";
+import { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
-import { useState } from "react";
-import { ListAlugueis } from "../components/ListAlugueis";
+import { AlertTriangle, BookCheck, BookOpen, History } from "lucide-react";
+import { api } from "@convex/_generated/api";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { StatCard } from "@/components/shared/StatCard";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { ListAlugueis, type RentalRow } from "../components/ListAlugueis";
 
 export function AluguelPages() {
   const [search, setSearch] = useState("");
-  const alugados = useQuery(api.model.alugueis.query.list) || [];
+  const aluno = useQuery(api.alunos.currentAluno);
+  const alugueis = useQuery(api.model.alugueis.query.list);
+  const books = useQuery(api.model.books.query.list);
 
-  const listBooks = useQuery(api.model.books.query.list) || [];
+  const loading = aluno === undefined || alugueis === undefined || books === undefined;
 
-  const livrosRented = listBooks.filter((book) => alugados.some((aluguel)=> aluguel.id_book.includes(book._id)))  
+  // Uma linha por (empréstimo, livro). O mais recente de cada livro é o que vale.
+  const rows = useMemo<RentalRow[]>(() => {
+    if (!aluno || !alugueis || !books) return [];
+    const bookById = new Map(books.map((b) => [b._id, b]));
+    const latestRentalOfBook = new Map<string, string>();
+    for (const a of [...alugueis].sort((x, y) => x._creationTime - y._creationTime)) {
+      for (const id of a.id_book) latestRentalOfBook.set(id, a._id);
+    }
+    return alugueis
+      .filter((a) => a.id_aluno === aluno._id)
+      .flatMap((a) =>
+        a.id_book.flatMap((id) => {
+          const book = bookById.get(id);
+          if (!book) return [];
+          const open = !book.available && latestRentalOfBook.get(id) === a._id;
+          const late =
+            open && !!a.data_devolucao && new Date(a.data_devolucao).getTime() < Date.now();
+          return [{ key: `${a._id}-${id}`, rental: a, book, open, late }];
+        }),
+      )
+      .sort((x, y) => y.rental._creationTime - x.rental._creationTime);
+  }, [aluno, alugueis, books]);
 
+  const filtered = rows.filter(
+    (r) =>
+      r.book.title.toLowerCase().includes(search.toLowerCase()) ||
+      r.book.author.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const abertos = loading ? undefined : rows.filter((r) => r.open).length;
+  const atrasados = loading ? undefined : rows.filter((r) => r.late).length;
+  const devolvidos = loading ? undefined : rows.filter((r) => !r.open).length;
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Livros alugados
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Gerencie os livros alugados e devolvidos
-          </p>
-        </div>
-        {/* <AddBooks /> */}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Meus livros em aberto
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <span className="text-2xl font-bold">{livrosRented.length}</span>
-          </CardContent>
-        </Card>
-      </div>
-      <Input
-        placeholder="Buscar por título..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="sm:max-w-xs"
+      <PageHeader
+        icon={History}
+        title="Meus empréstimos"
+        description="Acompanhe seus livros e faça as devoluções"
       />
-      <Separator />
-      <ListAlugueis books={listBooks} rented={alugados} />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Em aberto" value={abertos} icon={BookOpen} tone="amber" />
+        <StatCard label="Atrasados" value={atrasados} icon={AlertTriangle} tone="red" />
+        <StatCard label="Devolvidos" value={devolvidos} icon={BookCheck} />
+      </div>
+
+      <SearchInput value={search} onChange={setSearch} placeholder="Buscar por título ou autor..." />
+
+      <ListAlugueis rows={filtered} loading={loading} />
     </div>
   );
 }

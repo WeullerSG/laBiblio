@@ -1,15 +1,15 @@
 import { TableHead, TableRow } from "@/components/ui/table";
 
-export function TableHeadBooks() {
+export function TableHeadBooks({ selectable = false }: { selectable?: boolean }) {
   return (
-    <TableRow>
-      <TableHead className="w-12"></TableHead>
-      <TableHead className="w-48">Titulo</TableHead>
-      <TableHead className="w-52">Autor</TableHead>
-      <TableHead className="w-36">Isbn</TableHead>
-      <TableHead className="w-24">Ano</TableHead>
-      <TableHead className="w-28">Disponível</TableHead>
-      <TableHead className="w-16 text-center">Ações</TableHead>
+    <TableRow className="bg-muted/50 hover:bg-muted/50">
+      {selectable && <TableHead className="w-12" />}
+      <TableHead>Título</TableHead>
+      <TableHead>Autor</TableHead>
+      <TableHead className="hidden md:table-cell">ISBN</TableHead>
+      <TableHead className="hidden sm:table-cell">Ano</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead className="w-16 text-right">Ações</TableHead>
     </TableRow>
   );
 }

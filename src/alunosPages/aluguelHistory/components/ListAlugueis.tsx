@@ -1,3 +1,8 @@
+import { useState } from "react";
+import { useMutation } from "convex/react";
+import { History, Undo2 } from "lucide-react";
+import { api } from "@convex/_generated/api";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -8,120 +13,143 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
-import { useMutation } from "convex/react";
-import { useState } from "react";
+import { EmptyTableRow } from "@/components/shared/EmptyState";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { TableSkeletonRows } from "@/pages/books/components/ListBooks";
+import { Notifications } from "@/services/notifications";
+import { cn, formatDate } from "@/lib/utils";
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
+export type RentalRow = {
+  key: string;
+  rental: Doc<"alugueis">;
+  book: Doc<"books">;
+  open: boolean;
+  late: boolean;
+};
 
-interface RentedBooksProps {
-  books: Doc<"books">[];
-  rented: Doc<"alugueis">[];
-}
+type Toast = { title: string; description: string; variant: "default" | "destructive" };
 
-export function ListAlugueis({ books, rented }: RentedBooksProps) {
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+export function ListAlugueis({ rows, loading }: { rows: RentalRow[]; loading?: boolean }) {
+  const [selected, setSelected] = useState<Set<Id<"books">>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<Toast | null>(null);
   const returnBook = useMutation(api.books.returnBook);
 
-  const livrosRented = books.filter((book) =>
-    rented.some((aluguel) => aluguel.id_book.includes(book._id)),
-  );
-
-  const toggleRow = (bookId: string) => {
-    setSelectedRows((prev) => {
-      const newSet = new Set(prev);
-
-      if (newSet.has(bookId)) {
-        newSet.delete(bookId);
-      } else {
-        newSet.add(bookId);
-      }
-      return newSet;
+  const toggle = (id: Id<"books">) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
-  };
 
-  async function handleBooksReturnd() {
-    if (selectedRows.size === 0) {
-      alert("Selecione pelo menos um livro para devolver.");
-      return;
-    }
+  async function handleReturn() {
+    if (selected.size === 0) return;
+    setSubmitting(true);
     try {
-      await Promise.all(
-        Array.from(selectedRows).map((bookId) => returnBook({ id: bookId as any})),
-      );
-      alert("Livros devolvidos com sucesso!");
-      setSelectedRows(new Set());
+      await Promise.all(Array.from(selected).map((id) => returnBook({ id })));
+      setToast({
+        title: "Devolução registrada",
+        description: `${selected.size} livro(s) devolvido(s). Obrigado!`,
+        variant: "default",
+      });
+      setSelected(new Set());
     } catch (error) {
       console.error("Erro ao devolver livros:", error);
-      alert("Ocorreu um erro ao devovler os livros. Tente novamente.");
+      setToast({
+        title: "Erro",
+        description: "Não foi possível devolver os livros. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
     <>
-      <div>
-        <Button onClick={handleBooksReturnd}>Devolver Livros</Button>
-      </div>
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
-              <TableHead className="w-36">Retirada</TableHead>
-              <TableHead className="w-52">Titulo</TableHead>
-              <TableHead className="w-52">Autor</TableHead>
-              <TableHead className="w-36">Devolução</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {livrosRented.map((book) => {
-              const rentalData = rented.find((aluguel) =>
-                aluguel.id_book.includes(book._id),
-              );
+      {toast && <Notifications {...toast} onClose={() => setToast(null)} />}
 
-              if (!rentalData) return null;
-
-              return (
-                <TableRow key={book._id} className="cursor-pointer">
-                  <TableCell className="w-12">
-                    <Checkbox
-                      checked={selectedRows.has(book._id)}
-                      onCheckedChange={() => toggleRow(book._id)}
-                    />
-                  </TableCell>
-                  <TableCell className="w-36 truncate max-w-36" title={formatDate(rentalData.data_retirada)}>
-                    {formatDate(rentalData.data_retirada)}
-                  </TableCell>
-                  <TableCell className="w-52 truncate max-w-52" title={book.title}>
-                    {book.title}
-                  </TableCell>
-                  <TableCell className="w-52 truncate max-w-52" title={book.author}>
-                    {book.author}
-                  </TableCell>
-                  <TableCell
-                    className={`w-36 truncate max-w-36 ${
-                      new Date(rentalData.data_devolucao as any).getTime() > Date.now()
-                        ? ""
-                        : book.available === true ? "text-green-600" : "text-red-600"
-                    }`}
-                    title={formatDate(rentalData.data_devolucao)}
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            {selected.size > 0
+              ? `${selected.size} livro(s) selecionado(s)`
+              : "Selecione os livros em aberto para devolver"}
+          </p>
+          <Button
+            size="sm"
+            onClick={handleReturn}
+            disabled={selected.size === 0 || submitting}
+            className="gap-2"
+          >
+            <Undo2 className="size-4" />
+            {submitting ? "Devolvendo..." : "Devolver"}
+          </Button>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="w-12" />
+                <TableHead>Livro</TableHead>
+                <TableHead className="hidden sm:table-cell">Retirada</TableHead>
+                <TableHead>Devolução</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableSkeletonRows cols={5} />
+              ) : rows.length === 0 ? (
+                <EmptyTableRow
+                  colSpan={5}
+                  icon={History}
+                  title="Nenhum empréstimo"
+                  description="Quando você alugar um livro no catálogo, ele aparece aqui."
+                />
+              ) : (
+                rows.map(({ key, rental, book, open, late }) => (
+                  <TableRow
+                    key={key}
+                    onClick={() => open && toggle(book._id)}
+                    className={cn(open ? "cursor-pointer" : "text-muted-foreground")}
                   >
-                    {formatDate(rentalData.data_devolucao)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selected.has(book._id)}
+                        disabled={!open}
+                        onCheckedChange={() => toggle(book._id)}
+                        aria-label={`Selecionar ${book.title}`}
+                      />
+                    </TableCell>
+                    <TableCell className="max-w-64">
+                      <p className="truncate font-medium text-foreground" title={book.title}>
+                        {book.title}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{book.author}</p>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {formatDate(rental.data_retirada)}
+                    </TableCell>
+                    <TableCell className={cn(late && "font-medium text-red-600")}>
+                      {formatDate(rental.data_devolucao)}
+                    </TableCell>
+                    <TableCell>
+                      {late ? (
+                        <StatusBadge variant="danger">Atrasado</StatusBadge>
+                      ) : open ? (
+                        <StatusBadge variant="warning">Em aberto</StatusBadge>
+                      ) : (
+                        <StatusBadge variant="success">Devolvido</StatusBadge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </>
   );

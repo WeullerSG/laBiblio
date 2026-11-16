@@ -107,12 +107,14 @@ export function AddColaborador({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
-        <DialogTrigger>
-          <Button className="w-full sm:w-auto gap-2">
-            <Plus className="h-4 w-4" />
-            Adicionar Colaborador
-          </Button>
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            <Button className="w-full gap-2 shadow-sm sm:w-auto">
+              <Plus className="size-4" />
+              Adicionar Colaborador
+            </Button>
+          }
+        />
       )}
       <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh] overflow-hidden">
         <DialogHeader className="shrink-0">

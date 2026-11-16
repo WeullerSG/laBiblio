@@ -1,19 +1,20 @@
 @import "tailwindcss";
+@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
   --sidebar-width: 16rem;
   --sidebar-width-icon: 3rem;
-  --radius: 0.5rem;
-  --background: 0 0% 100%;
+  --radius: 0.625rem;
+  --background: 210 20% 98%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
   --primary: 142 76% 36%;
-  --primary-foreground: 355.7 100% 97.3%;
+  --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
   --muted: 210 40% 96.1%;
@@ -45,12 +46,12 @@
   --chart-month-11: 171.7 96.8% 36.5%;
   --chart-month-12: 336.3 59.8% 34.1%;
 
-  --sidebar: 0 0% 98%;
+  --sidebar: 0 0% 100%;
   --sidebar-foreground: 240 5.3% 26.1%;
   --sidebar-primary: 142 76% 36%;
   --sidebar-primary-foreground: 355.7 100% 97.3%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-accent: 142 60% 95%;
+  --sidebar-accent-foreground: 142 72% 24%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 142 76% 36%;
 }
@@ -152,6 +153,8 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
